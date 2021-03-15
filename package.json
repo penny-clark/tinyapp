@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/penny-clark/tinyapp/issues"
   },
-  "homepage": "https://github.com/penny-clark/tinyapp#readme"
+  "homepage": "https://github.com/penny-clark/tinyapp#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
 }
