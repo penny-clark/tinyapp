@@ -1,5 +1,7 @@
 const express = require("express");
 const app = express();
+const bodyParser = require("body-parser");
+app.use(bodyParser.urlencoded({extended: true}));
 const PORT = 8080;
 
 app.set("view engine", "ejs");
@@ -14,6 +16,11 @@ const urlDatabase = {
 app.get("/urls", (req, res) => {
   const templateVars= { urls: urlDatabase };
   res.render("urls_index", templateVars);
+});
+
+app.post("/urls", (req, res) => {
+  console.log(req.body);  // Log the POST request body to the console
+  res.send("Ok");         // Respond with 'Ok' (we will replace this)
 });
 
 app.get("/urls/new", (req, res) => {
@@ -40,3 +47,14 @@ app.get("/hello", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
+
+//assistance with this logic from https://stackoverflow.com/questions/1349404/generate-random-string-characters-in-javascript
+function generateRandomString() {
+let result = '';
+const characters = 'ABCDEFGHIJKLMNOPQRSTYUVWXYZabcdefghijklmnopqrstuvwxyz1234567890'
+for (let i = 0; i < 6; i++) {
+  let randomNumber = Math.ceil((Math.random() * (62 - 0 + 1) + 0));
+  result += characters[randomNumber]
+}
+return result;
+};
