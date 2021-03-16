@@ -27,12 +27,7 @@ const urlDatabase = {
 //route handler for /urls
 app.get("/urls", (req, res) => {
   const templateVars= { urls: urlDatabase };
-  res.render("urls_index", templateVars);
-});
-
-//moved this above app.post - experimenting with order
-app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  res.render("urls_index", templateVars)
 });
 
 app.post("/urls", (req, res) => {
@@ -43,12 +38,25 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${newUrlKey}`); 
 });
 
+// app.get("/urls/:shortURL/delete", (req, res) => {
+//   delete urlDatabase[req.params.shortURL];
+//   res.redirect("/urls");
+// });
+
+app.post("/urls/:shortURL/delete", (req, res) => {
+  console.log("deleting" + req.params.shortURL);
+  delete urlDatabase[req.params.shortURL];
+  res.redirect("/urls");
+});
 
 //edge cases to consider
 // What would happen if a client requests a non-existent shortURL?
 // What happens to the urlDatabase when the server is restarted?
 // What type of status code do our redirects have? What does this status code mean?
 
+app.get("/urls/new", (req, res) => {
+  res.render("urls_new");
+});
 
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
@@ -71,6 +79,11 @@ app.get("/urls.json", (req, res) => {
 app.get("/hello", (req, res) => {
   res.send("<htm><body>Hello <b>World</b></body></html>\n")
 });
+
+// app.get("*", (req, res)=> {
+//   //make 404 ejs
+// res.render("404");
+// })
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
