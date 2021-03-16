@@ -38,10 +38,7 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${newUrlKey}`); 
 });
 
-// app.get("/urls/:shortURL/delete", (req, res) => {
-//   delete urlDatabase[req.params.shortURL];
-//   res.redirect("/urls");
-// });
+
 
 app.post("/urls/:shortURL/delete", (req, res) => {
   console.log("deleting" + req.params.shortURL);
@@ -56,6 +53,19 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
+});
+
+app.post("/urls/edit", (req, res) => {
+  const url = req.body;
+  //getting rid of the old Short URL
+  for (const key in urlDatabase) {
+    if (urlDatabase[key] === url.longURL)
+    delete urlDatabase[key];
+  }
+  //making the new ShortURL
+  const newUrlKey = generateRandomString()
+  urlDatabase[newUrlKey] = url.longURL;
+  res.redirect(`/urls/${newUrlKey}`);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
