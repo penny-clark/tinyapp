@@ -12,7 +12,7 @@ function generateRandomString() {
   let result = '';
   const characters = 'ABCDEFGHIJKLMNOPQRSTYUVWXYZabcdefghijklmnopqrstuvwxyz1234567890'
   for (let i = 0; i < 6; i++) {
-    let randomNumber = Math.ceil((Math.random() * (62 - 0 + 1) + 0));
+    let randomNumber = Math.floor(Math.random() * 62);
     result += characters[randomNumber]
   }
   return result;
