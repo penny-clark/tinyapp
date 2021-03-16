@@ -5,7 +5,9 @@ app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
 const PORT = 8080;
 
-//assistance with this logic from https://stackoverflow.com/questions/1349404/generate-random-string-characters-in-javascript
+//NOTE right now if I try to use my short url directly from the page, I get a "too many redirects" notice
+//since we weren't asked to test that capability just yet, I won't worry about it for now
+
 function generateRandomString() {
   let result = '';
   const characters = 'ABCDEFGHIJKLMNOPQRSTYUVWXYZabcdefghijklmnopqrstuvwxyz1234567890'
@@ -28,6 +30,11 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
+//moved this above app.post - experimenting with order
+app.get("/urls/new", (req, res) => {
+  res.render("urls_new");
+});
+
 app.post("/urls", (req, res) => {
   console.log(req.body);  // Log the POST request body to the console
   const url = req.body;
@@ -37,18 +44,20 @@ app.post("/urls", (req, res) => {
 });
 
 
-app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
-});
+//edge cases to consider
+// What would happen if a client requests a non-existent shortURL?
+// What happens to the urlDatabase when the server is restarted?
+// What type of status code do our redirects have? What does this status code mean?
 
-app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
-  res.redirect(longURL);
-});
 
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
   res.render("urls_show", templateVars);
+});
+//moved this below app.get("urls/:shortURL")
+app.get("/u/:shortURL", (req, res) => {
+  const longURL = urlDatabase[req.params.shortURL];
+  res.redirect(longURL);
 });
 
 app.get("/", (req, res) => {
