@@ -7,6 +7,8 @@ app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
 const PORT = 8080;
 
+
+
 //I'll need req.cookies for my sign in handler
 //sample code
 // app.get('/', function (req, res) {
@@ -29,18 +31,17 @@ const urlDatabase = {
   "Frc345": "http://www.example.com"
 };
 
-app.get("/login", (req, res) => {
-  res.render("/login");
-});
 
 app.post("/login", (req, res) => {
-  const username = req.body.username;
-  console.log(username);
-  const newCookie = res.cookie('name', username);
-  console.log(newCookie);
-  //console.log('Cookies: ', req.cookies)
+  res.cookie('username', req.body.username);
+  console.log(req.cookies);
   res.redirect("/urls");
 })
+
+app.get("/login", (req, res) => {
+
+  res.render("/login");
+});
 
 //route handler for /urls
 app.get("/urls", (req, res) => {
@@ -48,6 +49,7 @@ app.get("/urls", (req, res) => {
     username: req.cookies["username"],
     urls: urlDatabase 
   };
+  //console.log(username);
   res.render("urls_index", templateVars)
 });
 
@@ -58,8 +60,6 @@ app.post("/urls", (req, res) => {
   urlDatabase[newUrlKey] = url.longURL;
   res.redirect(`/urls/${newUrlKey}`); 
 });
-
-
 
 app.post("/urls/:shortURL/delete", (req, res) => {
   console.log("deleting" + req.params.shortURL);
