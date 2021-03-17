@@ -24,7 +24,18 @@ function generateRandomString() {
 
 //DATABASES
 
-const users = {};
+const users = { 
+  "userRandomID": {
+    id: "userRandomID", 
+    email: "user@example.com", 
+    password: "purple-monkey-dinosaur"
+  },
+ "user2RandomID": {
+    id: "user2RandomID", 
+    email: "user2@example.com", 
+    password: "dishwasher-funk"
+  }
+}
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -43,11 +54,22 @@ app.get("/register", (req, res) => {
 });
 
 //Register submit handler
-app.post("register", (req, res) => {
-  res.cookie('username', req.body.username);
-  //res.redirect("/urls");
+//TO DO add logic preventing double registration from same email
+//TO DO add logic preventing double ups of the same user id
+app.post("/register", (req, res) => {
+  const id = generateRandomString();
+  const email = req.body.userEmail;
+  const password = req.body.userPassword;
+  users[id] = {
+    "id": id,
+    "email": email,
+    "password": password
+  };
+  res.cookie('user_id', id);
+  console.log(users);
+  res.redirect("/urls");
   //else redirect to non-user homepage
-})
+});
 
 //User home page 
 
