@@ -1,29 +1,30 @@
 const express = require("express");
+const PORT = 8080;
+const bodyParser = require("body-parser");
+//body parser makes the forms
 const cookieParser = require("cookie-parser");
+
 const app = express();
 app.use(cookieParser());
-const bodyParser = require("body-parser");
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
-const PORT = 8080;
 
 
-
-//I'll need req.cookies for my sign in handler
-//sample code
-// app.get('/', function (req, res) {
-//   // Cookies that have not been signed
-//   console.log('Cookies: ', req.cookies)
+//HELPER FUNCTION
 
 function generateRandomString() {
   let result = '';
   const characters = 'ABCDEFGHIJKLMNOPQRSTYUVWXYZabcdefghijklmnopqrstuvwxyz1234567890'
   for (let i = 0; i < 6; i++) {
     let randomNumber = Math.floor(Math.random() * 62);
-    result += characters[randomNumber]
+    result += characters[randomNumber];
   }
   return result;
-  };
+};
+
+//DATABASES
+
+const users = {};
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -31,13 +32,44 @@ const urlDatabase = {
   "Frc345": "http://www.example.com"
 };
 
+//ROUTES
 
-app.post("/login", (req, res) => {
+//Register new user path
+app.get("/register", (req, res) => {
+  const templateVars= { 
+    username: req.cookies["username"],
+  };
+  res.render("register", templateVars);
+});
+
+//Register submit handler
+app.post("register", (req, res) => {
   res.cookie('username', req.body.username);
-  res.redirect("/urls");
+  //res.redirect("/urls");
+  //else redirect to non-user homepage
 })
 
+//User home page 
+
+
+//Login path
+
 app.get("/login", (req, res) => {
+  res.render("/login");
+});
+
+//Login submit handler
+app.post("/login", (req, res) => {
+  //TO DO: add an "if else " username matches && password match statement to reach the user home page route
+  //if truthy res.cookie("user", )
+  res.cookie('username', req.body.username);
+  res.redirect("/urls");
+  //else redirect to non-user homepage
+})
+
+//Logout path
+
+app.get("/logout", (req, res) => {
   res.render("/login");
 });
 
@@ -46,11 +78,9 @@ app.post("/logout", (req, res) => {
   res.redirect("/urls");
 })
 
-app.get("/logout", (req, res) => {
-  res.render("/login");
-});
 
-//route handler for /urls
+// /url_index page
+
 app.get("/urls", (req, res) => {
   const templateVars= { 
     username: req.cookies["username"],
@@ -60,19 +90,7 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars)
 });
 
-app.post("/urls", (req, res) => {
-  console.log(req.body);  // Log the POST request body to the console
-  const url = req.body;
-  const newUrlKey = generateRandomString()
-  urlDatabase[newUrlKey] = url.longURL;
-  res.redirect(`/urls/${newUrlKey}`); 
-});
-
-app.post("/urls/:shortURL/delete", (req, res) => {
-  console.log("deleting" + req.params.shortURL);
-  delete urlDatabase[req.params.shortURL];
-  res.redirect("/urls");
-});
+//New TinyURL route
 
 //edge cases to consider
 // What would happen if a client requests a non-existent shortURL?
@@ -83,6 +101,24 @@ app.get("/urls/new", (req, res) => {
   const templateVars= { username: req.cookies["username"] };
   res.render("urls_new", templateVars);
 });
+
+app.post("/urls", (req, res) => {
+  console.log(req.body);  // Log the POST request body to the console
+  const url = req.body;
+  const newUrlKey = generateRandomString()
+  urlDatabase[newUrlKey] = url.longURL;
+  res.redirect(`/urls/${newUrlKey}`); 
+});
+
+//Delete TinyURL route
+
+app.post("/urls/:shortURL/delete", (req, res) => {
+  console.log("deleting" + req.params.shortURL);
+  delete urlDatabase[req.params.shortURL];
+  res.redirect("/urls");
+});
+
+//Edit existing TinyURL path
 
 app.post("/urls/edit", (req, res) => {
   const url = req.body;
@@ -105,7 +141,8 @@ app.get("/urls/:shortURL", (req, res) => {
   };
   res.render("urls_show", templateVars);
 });
-//moved this below app.get("urls/:shortURL")
+
+//shortURL redirect route
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL];
   res.redirect(longURL);
@@ -123,6 +160,7 @@ app.get("/hello", (req, res) => {
   res.send("<htm><body>Hello <b>World</b></body></html>\n")
 });
 
+// 404 Page
 // app.get("*", (req, res)=> {
 //   //make 404 ejs
 // res.render("404");
