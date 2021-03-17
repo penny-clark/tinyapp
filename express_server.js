@@ -1,12 +1,17 @@
 const express = require("express");
+const cookieParser = require("cookie-parser");
 const app = express();
+app.use(cookieParser());
 const bodyParser = require("body-parser");
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
 const PORT = 8080;
 
-//NOTE right now if I try to use my short url directly from the page, I get a "too many redirects" notice
-//since we weren't asked to test that capability just yet, I won't worry about it for now
+//I'll need req.cookies for my sign in handler
+//sample code
+// app.get('/', function (req, res) {
+//   // Cookies that have not been signed
+//   console.log('Cookies: ', req.cookies)
 
 function generateRandomString() {
   let result = '';
@@ -23,6 +28,19 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com",
   "Frc345": "http://www.example.com"
 };
+
+app.get("/login", (req, res) => {
+  res.render("/login");
+});
+
+app.post("/login", (req, res) => {
+  const username = req.body.username;
+  console.log(username);
+  const newCookie = res.cookie('name', username);
+  console.log(newCookie);
+  //console.log('Cookies: ', req.cookies)
+  res.redirect("/urls");
+})
 
 //route handler for /urls
 app.get("/urls", (req, res) => {
