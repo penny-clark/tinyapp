@@ -44,7 +44,10 @@ app.post("/login", (req, res) => {
 
 //route handler for /urls
 app.get("/urls", (req, res) => {
-  const templateVars= { urls: urlDatabase };
+  const templateVars= { 
+    username: req.cookies["username"],
+    urls: urlDatabase 
+  };
   res.render("urls_index", templateVars)
 });
 
@@ -70,7 +73,8 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 // What type of status code do our redirects have? What does this status code mean?
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const templateVars= { username: req.cookies["username"] };
+  res.render("urls_new", templateVars);
 });
 
 app.post("/urls/edit", (req, res) => {
@@ -87,7 +91,11 @@ app.post("/urls/edit", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
+  const templateVars = { 
+    username: req.cookies["username"],
+    shortURL: req.params.shortURL, 
+    longURL: urlDatabase[req.params.shortURL]
+  };
   res.render("urls_show", templateVars);
 });
 //moved this below app.get("urls/:shortURL")
