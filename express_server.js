@@ -24,16 +24,18 @@ const generateRandomString = () => {
 };
 
 //for checking for duplicates in the users database
-const checkUniqueId = compareItem => {
-  let itemUnique = true;
+const checkId = compareItem => {
+  let duplicate = false
   for (const user in users) {
     if (users[user].id === compareItem) {
-      itemUnique = false;
+      duplicate = users[user].id;
     } else if (users[user].email === compareItem) {
-      itemUnique = false;
-    } 
+      duplicate = users[user].id;
+    } else if (users[user].password === compareItem) {
+      duplicate = users[user].id; 
+    }
   }
-  return itemUnique;
+  return duplicate;
 };
 
 //DATABASES
@@ -71,7 +73,7 @@ app.get("/register", (req, res) => {
 //Register submit handler
 //DONE add logic preventing double registration from same email 
 //TO DO add logic preventing double ups of the same user id
-//DONE add logic that forces the user to input a string for both email and username
+//DONE add logic that forces the user to input a string for both email and password
 app.post("/register", (req, res) => {
 
   //tentaitive logic for preventing userId double ups. Will wait for this to come up in assignment
@@ -86,7 +88,7 @@ app.post("/register", (req, res) => {
   if (!email || !password) {
     //sending status code assistance from https://stackoverflow.com/questions/14154337/how-to-send-a-custom-http-status-message-in-node-express
     res.status(400).send("Please enter a valid email and password");
-  } else if (checkUniqueId(email) === false) {
+  } else if (checkId(email)) {
     res.status(400).send("This email is already in use")
   } else {
     users[id] = {
@@ -106,16 +108,30 @@ app.post("/register", (req, res) => {
 //Login path
 
 app.get("/login", (req, res) => {
-  res.render("/login");
+  const templateVars= { 
+    userId: req.cookies["user_id"],
+  };
+  res.render("login", templateVars);
 });
 
 //Login submit handler
 app.post("/login", (req, res) => {
-  //TO DO: add an "if else " username matches && password match statement to reach the user home page route
-  //if truthy res.cookie("user", )
-  //NO MORE USERNAME res.cookie('username', req.body.username);
-  res.redirect("/urls");
-  //else redirect to non-user homepage
+  //DONE TO DO: add an "if else " email matches && password match statement to reach the user home page route
+  const email = req.body.userEmail;
+  const password = req.body.userPassword;
+  let id = undefined;
+  if (checkId(email)) {
+    if (checkId(email) === checkId(password)) {
+      let userMatch = checkId(email);
+      id = users[userMatch].id;
+      res.cookie('user_id', users[id]);
+      res.redirect("/urls");
+    } else {
+      res.status(403).send("Password not correct")
+    }
+  } else {
+  res.status(403).send("Email not found. Please register a new account");
+  }
 })
 
 //Logout path
@@ -138,7 +154,6 @@ app.get("/urls", (req, res) => {
     userId: req.cookies["user_id"],
     urls: urlDatabase 
   };
-  //console.log(username);
   res.render("urls_index", templateVars)
 });
 
