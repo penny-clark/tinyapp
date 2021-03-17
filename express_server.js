@@ -48,7 +48,8 @@ const urlDatabase = {
 //Register new user path
 app.get("/register", (req, res) => {
   const templateVars= { 
-    username: req.cookies["username"],
+    //updated
+    userId: req.cookies["user_id"],
   };
   res.render("register", templateVars);
 });
@@ -56,6 +57,7 @@ app.get("/register", (req, res) => {
 //Register submit handler
 //TO DO add logic preventing double registration from same email
 //TO DO add logic preventing double ups of the same user id
+//TODO add logic that forces the user to input a string for both email and username
 app.post("/register", (req, res) => {
   const id = generateRandomString();
   const email = req.body.userEmail;
@@ -65,7 +67,7 @@ app.post("/register", (req, res) => {
     "email": email,
     "password": password
   };
-  res.cookie('user_id', id);
+  res.cookie('user_id', users[id]);
   console.log(users);
   res.redirect("/urls");
   //else redirect to non-user homepage
@@ -84,7 +86,7 @@ app.get("/login", (req, res) => {
 app.post("/login", (req, res) => {
   //TO DO: add an "if else " username matches && password match statement to reach the user home page route
   //if truthy res.cookie("user", )
-  res.cookie('username', req.body.username);
+  //NO MORE USERNAME res.cookie('username', req.body.username);
   res.redirect("/urls");
   //else redirect to non-user homepage
 })
@@ -96,7 +98,7 @@ app.get("/logout", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie('username');
+  res.clearCookie('user_id');
   res.redirect("/urls");
 })
 
@@ -105,7 +107,8 @@ app.post("/logout", (req, res) => {
 
 app.get("/urls", (req, res) => {
   const templateVars= { 
-    username: req.cookies["username"],
+    //updated
+    userId: req.cookies["user_id"],
     urls: urlDatabase 
   };
   //console.log(username);
@@ -120,7 +123,10 @@ app.get("/urls", (req, res) => {
 // What type of status code do our redirects have? What does this status code mean?
 
 app.get("/urls/new", (req, res) => {
-  const templateVars= { username: req.cookies["username"] };
+  const templateVars= { 
+    //updated
+    userId: req.cookies["user_id"] 
+  };
   res.render("urls_new", templateVars);
 });
 
@@ -157,7 +163,8 @@ app.post("/urls/edit", (req, res) => {
 
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = { 
-    username: req.cookies["username"],
+    //updated
+    userId: req.cookies["user_id"],
     shortURL: req.params.shortURL, 
     longURL: urlDatabase[req.params.shortURL]
   };
