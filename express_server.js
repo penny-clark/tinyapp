@@ -10,9 +10,10 @@ app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
 
 
-//HELPER FUNCTION
+//HELPER FUNCTIONS
 
-function generateRandomString() {
+//for making unique ids
+const generateRandomString = () => {
   let result = '';
   const characters = 'ABCDEFGHIJKLMNOPQRSTYUVWXYZabcdefghijklmnopqrstuvwxyz1234567890'
   for (let i = 0; i < 6; i++) {
@@ -20,6 +21,19 @@ function generateRandomString() {
     result += characters[randomNumber];
   }
   return result;
+};
+
+//for checking for duplicates in the users database
+const checkUniqueId = compareItem => {
+  let itemUnique = true;
+  for (const user in users) {
+    if (users[user].id === compareItem) {
+      itemUnique = false;
+    } else if (users[user].email === compareItem) {
+      itemUnique = false;
+    } 
+  }
+  return itemUnique;
 };
 
 //DATABASES
@@ -55,22 +69,35 @@ app.get("/register", (req, res) => {
 });
 
 //Register submit handler
-//TO DO add logic preventing double registration from same email
+//DONE add logic preventing double registration from same email 
 //TO DO add logic preventing double ups of the same user id
-//TODO add logic that forces the user to input a string for both email and username
+//DONE add logic that forces the user to input a string for both email and username
 app.post("/register", (req, res) => {
+
+  //tentaitive logic for preventing userId double ups. Will wait for this to come up in assignment
+  // let newUserId = generateRandomString();
+  // while(checkUniqueId(newUserId) === false) {
+  //   newUserId = generateRandomString();
+  // }
+
   const id = generateRandomString();
   const email = req.body.userEmail;
   const password = req.body.userPassword;
-  users[id] = {
-    "id": id,
-    "email": email,
-    "password": password
-  };
-  res.cookie('user_id', users[id]);
-  console.log(users);
-  res.redirect("/urls");
-  //else redirect to non-user homepage
+  if (!email || !password) {
+    //sending status code assistance from https://stackoverflow.com/questions/14154337/how-to-send-a-custom-http-status-message-in-node-express
+    res.status(400).send("Please enter a valid email and password");
+  } else if (checkUniqueId(email) === false) {
+    res.status(400).send("This email is already in use")
+  } else {
+    users[id] = {
+      "id": id,
+      "email": email,
+      "password": password
+    };
+    res.cookie('user_id', users[id]);
+    console.log(users);
+    res.redirect("/urls");
+  }
 });
 
 //User home page 
