@@ -54,9 +54,8 @@ const users = {
 }
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
-  "Frc345": "http://www.example.com"
+  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
+  i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
 };
 
 //ROUTES
@@ -179,9 +178,13 @@ app.get("/urls/new", (req, res) => {
 
 app.post("/urls", (req, res) => {
   console.log(req.body);  // Log the POST request body to the console
+  const userId = req.cookies["user_id"];
   const url = req.body;
   const newUrlKey = generateRandomString()
-  urlDatabase[newUrlKey] = url.longURL;
+  urlDatabase[newUrlKey] = { 
+    "longURL": url.longURL,
+    "userID": userId.id
+  }
   res.redirect(`/urls/${newUrlKey}`); 
 });
 
