@@ -169,14 +169,11 @@ app.get("/urls", (req, res) => {
     urls: urlDatabase, 
   };
   const userId = req.cookies["user_id"];
-  console.log(userId, "user id at index")
   if (userId === undefined) {
     res.redirect("/login")
   } else {
     const userUrls = filterUserURLS(userId.id, urlDatabase);
-    console.group(userUrls, "userUrls at index")
     templateVars.userUrls = userUrls;
-    console.log(templateVars, "template vars at index")
     res.render("urls_index", templateVars)
   }
 });
@@ -215,24 +212,41 @@ app.post("/urls", (req, res) => {
 //Delete TinyURL route
 
 app.post("/urls/:shortURL/delete", (req, res) => {
+  const userId = req.cookies["user_id"];
+  if (userId === undefined) {
+    res.redirect("/login")
+  } else if (urlDatabase[req.params.shortURL].userID !== userId.id) {
+    res.status(400).send("Not allowed")
+  } else {
   console.log("deleting" + req.params.shortURL);
   delete urlDatabase[req.params.shortURL];
   res.redirect("/urls");
+  }
 });
 
 //Edit existing TinyURL path
 
 app.post("/urls/edit", (req, res) => {
+  const userId = req.cookies["user_id"];
+  if (userId === undefined) {
+    res.redirect("/login")
+  } else if (urlDatabase[req.params.shortURL].userID !== userId.id) {
+    res.status(400).send("Not allowed")
+  } else {
   const url = req.body;
   //getting rid of the old Short URL
   for (const key in urlDatabase) {
-    if (urlDatabase[key] === url.longURL)
+    if (urlDatabase[key].longURL === url.longURL)
     delete urlDatabase[key];
   }
   //making the new ShortURL
   const newUrlKey = generateRandomString()
-  urlDatabase[newUrlKey] = url.longURL;
+  urlDatabase[newUrlKey] = { 
+    "longURL": url.longURL,
+    "userID": userId.id
+  }
   res.redirect(`/urls/${newUrlKey}`);
+}
 });
 
 app.get("/urls/:shortURL", (req, res) => {
