@@ -23,10 +23,10 @@
         </tr>
       </thread>
       <tbody>
-        <% for(let url in urls) { %>
+        <% for(let url in userUrls) { %>
         <tr>
           <td><%= url %></td>
-          <td><%= urls[url].longURL %></td>
+          <td><%= userUrls[url] %></td>
           <td> <a href= "/urls/<%= url %>"><button type="button" class="btn btn-outline-primary">Edit</button></a></td>
          <form method="POST" action="/urls/<%= url %>/delete">
           <td><button type="submit" class="btn btn-outline-danger">Delete</button></td>

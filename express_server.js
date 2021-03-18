@@ -38,6 +38,17 @@ const checkId = compareItem => {
   return duplicate;
 };
 
+//for checking if a database entry belongs to the user
+const filterUserURLS = (userId, database) => {
+  const usersURLs = {};
+  for (const item in database) {
+    if (database[item].userID === userId) {
+    usersURLs[item] = database[item].longURL;
+    }
+  }
+  return usersURLs;
+}
+
 //DATABASES
 
 const users = { 
@@ -50,6 +61,11 @@ const users = {
     id: "user2RandomID", 
     email: "user2@example.com", 
     password: "dishwasher-funk"
+  },
+  "aJ48lW": {
+    id: "aJ48lW",
+    email: "egg@egg.com",
+    password: "eggy"
   }
 }
 
@@ -149,11 +165,20 @@ app.post("/logout", (req, res) => {
 
 app.get("/urls", (req, res) => {
   const templateVars= { 
-    //updated
     userId: req.cookies["user_id"],
-    urls: urlDatabase 
+    urls: urlDatabase, 
   };
-  res.render("urls_index", templateVars)
+  const userId = req.cookies["user_id"];
+  console.log(userId, "user id at index")
+  if (userId === undefined) {
+    res.redirect("/login")
+  } else {
+    const userUrls = filterUserURLS(userId.id, urlDatabase);
+    console.group(userUrls, "userUrls at index")
+    templateVars.userUrls = userUrls;
+    console.log(templateVars, "template vars at index")
+    res.render("urls_index", templateVars)
+  }
 });
 
 //New TinyURL route
@@ -168,7 +193,6 @@ app.get("/urls/new", (req, res) => {
     userId: req.cookies["user_id"] 
   };
   const userId = req.cookies["user_id"];
-  console.log(userId, "user Id")
   if (userId === undefined) {
     res.redirect("/login")
   } else {
@@ -185,7 +209,6 @@ app.post("/urls", (req, res) => {
     "longURL": url.longURL,
     "userID": userId.id
   }
-  console.log(urlDatabase, "url Database new path")
   res.redirect(`/urls/${newUrlKey}`); 
 });
 
@@ -214,7 +237,6 @@ app.post("/urls/edit", (req, res) => {
 
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = { 
-    //updated
     userId: req.cookies["user_id"],
     shortURL: req.params.shortURL, 
     longURL: urlDatabase[req.params.shortURL].longURL
