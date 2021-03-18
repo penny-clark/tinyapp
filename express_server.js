@@ -177,7 +177,7 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req.body);  // Log the POST request body to the console
+  console.log(req.body, "req body");  // Log the POST request body to the console
   const userId = req.cookies["user_id"];
   const url = req.body;
   const newUrlKey = generateRandomString()
@@ -185,6 +185,7 @@ app.post("/urls", (req, res) => {
     "longURL": url.longURL,
     "userID": userId.id
   }
+  console.log(urlDatabase, "url Database new path")
   res.redirect(`/urls/${newUrlKey}`); 
 });
 
@@ -216,14 +217,16 @@ app.get("/urls/:shortURL", (req, res) => {
     //updated
     userId: req.cookies["user_id"],
     shortURL: req.params.shortURL, 
-    longURL: urlDatabase[req.params.shortURL]
+    longURL: urlDatabase[req.params.shortURL].longURL
   };
   res.render("urls_show", templateVars);
 });
 
 //shortURL redirect route
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
+  const longURL = urlDatabase[req.params.shortURL].longURL;
+  console.log(longURL)
+  //res.redirect("/")
   res.redirect(longURL);
 });
 
