@@ -2,20 +2,19 @@ const express = require("express");
 //looks like we might change this to - process.env.PORT || 8080
 const PORT = 8080;
 const bodyParser = require("body-parser");
-const cookieParser = require("cookie-parser");
-//const cookieSession =require('cookie-session') //this will replace cookie parser
+//const cookieParser = require("cookie-parser");
+const cookieSession = require('cookie-session');
 const bcrypt = require('bcrypt');
 
-// app.use(cookieSession({
-  // //this is the name of the cookie in the browser
-//   name:,
-//   keys: ['secretky1', 'secrtkey2']
-// }))
-
 const app = express();
-app.use(cookieParser());
+//app.use(cookieParser());
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
+app.use(cookieSession({
+  //this is the name of the cookie in the browser
+  name: 'tinyAppSession',
+  keys: ['secretkey1', 'secretkey2']
+}));
 
 
 
@@ -29,7 +28,7 @@ app.use(bodyParser.urlencoded({extended: true}));
 //for making unique ids
 const generateRandomString = () => {
   let result = '';
-  const characters = 'ABCDEFGHIJKLMNOPQRSTYUVWXYZabcdefghijklmnopqrstuvwxyz1234567890'
+  const characters = 'ABCDEFGHIJKLMNOPQRSTYUVWXYZabcdefghijklmnopqrstuvwxyz1234567890';
   for (let i = 0; i < 6; i++) {
     let randomNumber = Math.floor(Math.random() * 62);
     result += characters[randomNumber];
@@ -39,14 +38,14 @@ const generateRandomString = () => {
 
 //for checking for duplicates in the users database
 const checkId = compareItem => {
-  let duplicate = false
+  let duplicate = false;
   for (const user in users) {
     if (users[user].id === compareItem) {
       duplicate = users[user].id;
     } else if (users[user].email === compareItem) {
       duplicate = users[user].id;
     } else if (users[user].password === compareItem) {
-      duplicate = users[user].id; 
+      duplicate = users[user].id;
     }
   }
   return duplicate;
@@ -57,23 +56,23 @@ const filterUserURLS = (userId, database) => {
   const usersURLs = {};
   for (const item in database) {
     if (database[item].userID === userId) {
-    usersURLs[item] = database[item].longURL;
+      usersURLs[item] = database[item].longURL;
     }
   }
   return usersURLs;
-}
+};
 
 //DATABASES
 
-const users = { 
+const users = {
   "userRandomID": {
-    id: "userRandomID", 
-    email: "user@example.com", 
+    id: "userRandomID",
+    email: "user@example.com",
     password: "purple-monkey-dinosaur"
   },
- "user2RandomID": {
-    id: "user2RandomID", 
-    email: "user2@example.com", 
+  "user2RandomID": {
+    id: "user2RandomID",
+    email: "user2@example.com",
     password: "dishwasher-funk"
   },
   "aJ48lW": {
@@ -81,7 +80,7 @@ const users = {
     email: "egg@egg.com",
     password: "eggy"
   }
-}
+};
 
 const urlDatabase = {
   b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
@@ -92,15 +91,17 @@ const urlDatabase = {
 
 //Register new user path
 app.get("/register", (req, res) => {
-  const templateVars= { 
+  const templateVars= {
     //updated
-    userId: req.cookies["user_id"],
+    userId: req.session.user_id
+    //old way
+    //userId: req.cookies["user_id"],
   };
   res.render("register", templateVars);
 });
 
 //Register submit handler
-//DONE add logic preventing double registration from same email 
+//DONE add logic preventing double registration from same email
 //TO DO add logic preventing double ups of the same user id
 //DONE add logic that forces the user to input a string for both email and password
 app.post("/register", (req, res) => {
@@ -113,30 +114,33 @@ app.post("/register", (req, res) => {
 
   const id = generateRandomString();
   const email = req.body.userEmail;
-  password = req.body.userPassword;
+  const password = req.body.userPassword;
   //TODO referactor with If() { return}
   if (!email || !password) {
     //sending status code assistance from https://stackoverflow.com/questions/14154337/how-to-send-a-custom-http-status-message-in-node-express
-    res.status(400).send("Please enter a valid email and password");
-  } else if (checkId(email)) {
-    res.status(400).send("This email is already in use")
+    return res.status(400).send("Please enter a valid email and password");
+  }
+  
+  if (checkId(email)) {
+    return res.status(400).send("This email is already in use");
   } else {
     //asychronous hashing logic learned during W3D4 lecture from Andy Lindsay
     //https://github.com/andydlindsay/mar01-2021/blob/master/w03d04/server.js
     bcrypt.genSalt(10)
       .then((salt) => {
-        return bcrypt.hash(password, salt)
+        return bcrypt.hash(password, salt);
       })
       .then((hash) => {
         users[id] = {
           "id": id,
           "email": email,
           "password": hash
-      };
-      res.cookie('user_id', users[id]);
-      console.log(users);
-      res.redirect("/urls");
-    });
+        };
+        req.session.user_id = users[id] //users[users[id]];
+        //res.cookie('user_id', users[id]);
+        console.log(users); //debugging
+        return res.redirect("/urls");
+      });
   }
 });
 
@@ -146,8 +150,9 @@ app.post("/register", (req, res) => {
 //Login path
 
 app.get("/login", (req, res) => {
-  const templateVars= { 
-    userId: req.cookies["user_id"],
+  const templateVars = {
+    userId: req.session.user_id
+    //userId: req.cookies["user_id"],
   };
   res.render("login", templateVars);
 });
@@ -159,24 +164,26 @@ app.post("/login", (req, res) => {
   const password = req.body.userPassword;
   //console.log(hashedPassword);
   //let id = undefined;
+
   if (checkId(email)) {
     //assistance with this part from the W3D4 lecture from Andy Lindsay
     //(altered to match my existing logic)
     //https://github.com/andydlindsay/mar01-2021/blob/master/w03d04/server.js
-    userMatch = checkId(email)
+    let userMatch = checkId(email);
     bcrypt.compare(password, users[userMatch].password)
-    .then((result) => {
-      if (result) {
-        res.cookie('user_id', users[userMatch]);
-        res.redirect("/urls");
-      } else {
+      .then((result) => {
+        if (result) {
+          req.session.user_id = users[userMatch];
+        //res.cookie('user_id', users[userMatch]);
+          res.redirect("/urls");
+        } else {
         res.status(403).send("Password not correct")
       }
     })
   } else {
   res.status(403).send("Email not found. Please register a new account");
   }
-})
+});
 
 //Logout path
 
@@ -185,25 +192,26 @@ app.get("/logout", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie('user_id');
+  req.session = null;
   res.redirect("/urls");
-})
+});
 
 
 // /url_index page
 
 app.get("/urls", (req, res) => {
-  const templateVars= { 
-    userId: req.cookies["user_id"],
+  const templateVars = {
+    userId: req.session.user_id,
+    //userId: req.cookies["user_id"],
     urls: urlDatabase, 
   };
-  const userId = req.cookies["user_id"];
+  const userId = req.session.user_id;
   if (userId === undefined) {
-    res.redirect("/login")
+    res.redirect("/login");
   } else {
     const userUrls = filterUserURLS(userId.id, urlDatabase);
     templateVars.userUrls = userUrls;
-    res.render("urls_index", templateVars)
+    res.render("urls_index", templateVars);
   }
 });
 
@@ -215,12 +223,13 @@ app.get("/urls", (req, res) => {
 // What type of status code do our redirects have? What does this status code mean?
 
 app.get("/urls/new", (req, res) => {
-  const templateVars= { 
-    userId: req.cookies["user_id"] 
+  const templateVars = {
+    userId: req.session.user_id
+    //userId: req.cookies["user_id"]
   };
-  const userId = req.cookies["user_id"];
+  const userId = req.session.user_id;
   if (userId === undefined) {
-    res.redirect("/login")
+    res.redirect("/login");
   } else {
     res.render("urls_new", templateVars);
   }
@@ -228,59 +237,60 @@ app.get("/urls/new", (req, res) => {
 
 app.post("/urls", (req, res) => {
   console.log(req.body, "req body");  // Log the POST request body to the console
-  const userId = req.cookies["user_id"];
+  const userId = req.session.user_id;
   const url = req.body;
-  const newUrlKey = generateRandomString()
-  urlDatabase[newUrlKey] = { 
+  const newUrlKey = generateRandomString();
+  urlDatabase[newUrlKey] = {
     "longURL": url.longURL,
     "userID": userId.id
-  }
-  res.redirect(`/urls/${newUrlKey}`); 
+  };
+  res.redirect(`/urls/${newUrlKey}`);
 });
 
 //Delete TinyURL route
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  const userId = req.cookies["user_id"];
+  const userId = req.session.user_id;
   if (userId === undefined) {
-    res.redirect("/login")
+    res.redirect("/login");
   } else if (urlDatabase[req.params.shortURL].userID !== userId.id) {
-    res.status(400).send("Not allowed")
+    res.status(400).send("Not allowed");
   } else {
-  console.log("deleting" + req.params.shortURL);
-  delete urlDatabase[req.params.shortURL];
-  res.redirect("/urls");
+    console.log("deleting" + req.params.shortURL);
+    delete urlDatabase[req.params.shortURL];
+    res.redirect("/urls");
   }
 });
 
 //Edit existing TinyURL path
 
 app.post("/urls/edit", (req, res) => {
-  const userId = req.cookies["user_id"];
+  const userId = req.session.user_id;
   if (userId === undefined) {
-    res.redirect("/login")
+    res.redirect("/login");
   } else if (urlDatabase[req.params.shortURL].userID !== userId.id) {
-    res.status(400).send("Not allowed")
+    res.status(400).send("Not allowed");
   } else {
-  const url = req.body;
-  //getting rid of the old Short URL
-  for (const key in urlDatabase) {
-    if (urlDatabase[key].longURL === url.longURL)
-    delete urlDatabase[key];
-  }
+    const url = req.body;
+    //getting rid of the old Short URL
+    for (const key in urlDatabase) {
+      if (urlDatabase[key].longURL === url.longURL)
+      delete urlDatabase[key];
+    }
   //making the new ShortURL
-  const newUrlKey = generateRandomString()
-  urlDatabase[newUrlKey] = { 
-    "longURL": url.longURL,
-    "userID": userId.id
+    const newUrlKey = generateRandomString()
+    urlDatabase[newUrlKey] = {
+      "longURL": url.longURL,
+      "userID": userId.id
+    }
+    res.redirect(`/urls/${newUrlKey}`);
   }
-  res.redirect(`/urls/${newUrlKey}`);
-}
 });
 
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = { 
-    userId: req.cookies["user_id"],
+    userId: req.session.user_id,
+    //userId: req.cookies["user_id"],
     shortURL: req.params.shortURL, 
     longURL: urlDatabase[req.params.shortURL].longURL
   };
