@@ -9,11 +9,11 @@
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
         <% if(userId === undefined){ %>
-          <a href="/login"><button type="button" class="btn btn-primary">Login</button></a>
-          <a href="/register"><button type="button" class="btn btn-primary">Register</button></a>
+          <a class="nav-item nav-link" href="/login">Login</a>
+          <a class="nav-item nav-link" href="/register">Register</a>
       <% } else { %>
         <form method="POST" action="/logout">
-        <a class="nav-item">Logged in as: <%= userId.id %> <button type="submit" class="btn btn-primary">Logout</button></a></a>
+        <a class="nav-item">Logged in as: <%= userId.email %> <button type="submit" class="btn btn-primary">Logout</button></a></a>
         </form>
         <% } %>
       </div>

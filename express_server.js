@@ -23,26 +23,9 @@ const { generateRandomString, checkId, filterUserURLS } = require('./helpers')
 //DATABASES
 
 const users = {
-  "userRandomID": {
-    id: "userRandomID",
-    email: "user@example.com",
-    password: "purple-monkey-dinosaur"
-  },
-  "user2RandomID": {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "dishwasher-funk"
-  },
-  "aJ48lW": {
-    id: "aJ48lW",
-    email: "egg@egg.com",
-    password: "eggy"
-  }
 };
 
 const urlDatabase = {
-  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
-  i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
 };
 
 //ROUTES
@@ -50,30 +33,25 @@ const urlDatabase = {
 //Register new user path
 app.get("/register", (req, res) => {
   const templateVars= {
-    //updated
     userId: req.session.user_id
-    //old way
-    //userId: req.cookies["user_id"],
   };
   res.render("register", templateVars);
 });
 
 //Register submit handler
-//DONE add logic preventing double registration from same email
 //TO DO add logic preventing double ups of the same user id
-//DONE add logic that forces the user to input a string for both email and password
 app.post("/register", (req, res) => {
 
-  //tentaitive logic for preventing userId double ups. Will wait for this to come up in assignment
+  //tentative logic for preventing userId double ups. Will wait for this to come up in assignment
   // let newUserId = generateRandomString();
-  // while(checkUniqueId(newUserId) === false) {
+  // while(checkId(newUserId) !== false) {
   //   newUserId = generateRandomString();
   // }
 
   const id = generateRandomString();
   const email = req.body.userEmail;
   const password = req.body.userPassword;
-  //TODO referactor with If() { return}
+
   if (!email || !password) {
     //sending status code assistance from https://stackoverflow.com/questions/14154337/how-to-send-a-custom-http-status-message-in-node-express
     return res.status(400).send("Please enter a valid email and password");
@@ -81,25 +59,24 @@ app.post("/register", (req, res) => {
   
   if (checkId(email, users)) {
     return res.status(400).send("This email is already in use");
-  } else {
+  }
     //asychronous hashing logic learned during W3D4 lecture from Andy Lindsay
     //https://github.com/andydlindsay/mar01-2021/blob/master/w03d04/server.js
-    bcrypt.genSalt(10)
-      .then((salt) => {
-        return bcrypt.hash(password, salt);
-      })
-      .then((hash) => {
-        users[id] = {
-          "id": id,
-          "email": email,
-          "password": hash
-        };
-        req.session.user_id = users[id] //users[users[id]];
-        //res.cookie('user_id', users[id]);
-        console.log(users); //debugging
-        return res.redirect("/urls");
-      });
-  }
+  bcrypt.genSalt(10)
+    .then((salt) => {
+      return bcrypt.hash(password, salt);
+    })
+    .then((hash) => {
+      users[id] = {
+        "id": id,
+        "email": email,
+        "password": hash
+      };
+      req.session.user_id = users[id] //users[users[id]];
+      console.log(users); //debugging
+      return res.redirect("/urls");
+    });
+
 });
 
 //User home page 
@@ -225,30 +202,38 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 app.post("/urls/edit", (req, res) => {
   const userId = req.session.user_id;
   if (userId === undefined) {
-    res.redirect("/login");
-  } else if (urlDatabase[req.params.shortURL].userID !== userId.id) {
-    res.status(400).send("Not allowed");
-  } else {
-    const url = req.body;
-    //getting rid of the old Short URL
-    for (const key in urlDatabase) {
-      if (urlDatabase[key].longURL === url.longURL)
-      delete urlDatabase[key];
-    }
-  //making the new ShortURL
-    const newUrlKey = generateRandomString()
-    urlDatabase[newUrlKey] = {
-      "longURL": url.longURL,
-      "userID": userId.id
-    }
-    res.redirect(`/urls/${newUrlKey}`);
+    return res.redirect("/login");
   }
+
+  //This isn't working yet
+  if (urlDatabase[req.params.shortURL] === undefined) {
+    return res.status(400).send("Page does not exist");
+  }
+  
+  if (urlDatabase[req.params.shortURL].userID !== userId.id) {
+    return res.status(400).send("Not allowed");
+  } 
+
+  const url = req.body;
+    //getting rid of the old Short URL
+  for (const key in urlDatabase) {
+    if (urlDatabase[key].longURL === url.longURL)
+    delete urlDatabase[key];
+  }
+  //making the new ShortURL
+  const newUrlKey = generateRandomString()
+  urlDatabase[newUrlKey] = {
+    "longURL": url.longURL,
+    "userID": userId.id
+  }
+  res.redirect(`/urls/${newUrlKey}`);
 });
 
+// edit shortURL display page
 app.get("/urls/:shortURL", (req, res) => {
+
   const templateVars = { 
     userId: req.session.user_id,
-    //userId: req.cookies["user_id"],
     shortURL: req.params.shortURL, 
     longURL: urlDatabase[req.params.shortURL].longURL
   };
@@ -259,31 +244,41 @@ app.get("/urls/:shortURL", (req, res) => {
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL].longURL;
   console.log(longURL)
-  //res.redirect("/")
   res.redirect(longURL);
 });
 
+// Home page
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  const templateVars = {
+    userId: req.session.user_id,
+    urls: urlDatabase, 
+  };
+  const userId = req.session.user_id;
+
+  // If user is not logged in, redirects to login page
+  if (userId === undefined) {
+    return res.redirect("/login");
+  }
+  // If user is logged in, redirects to index page with user's urls 
+  const userUrls = filterUserURLS(userId.id, urlDatabase);
+  templateVars.userUrls = userUrls;
+  res.render("urls_index", templateVars);
+
 });
 
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
 
-app.get("/hello", (req, res) => {
-  res.send("<htm><body>Hello <b>World</b></body></html>\n")
-});
-
-// 404 Page
-// app.get("*", (req, res)=> {
-//   //make 404 ejs
-// res.render("404");
-// })
+// Default page path
+app.get("*", (req, res)=> {
+  return res.status(400).send("Page does not exist");
+})
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
 
 
+//Do I need this?
+// app.get("/urls.json", (req, res) => {
+//   res.json(urlDatabase);
+// });
 
