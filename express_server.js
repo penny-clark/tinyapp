@@ -1,14 +1,28 @@
 const express = require("express");
+//looks like we might change this to - process.env.PORT || 8080
 const PORT = 8080;
 const bodyParser = require("body-parser");
-//body parser makes the forms
 const cookieParser = require("cookie-parser");
+//const cookieSession =require('cookie-session') //this will replace cookie parser
+const bcrypt = require('bcrypt');
+
+// app.use(cookieSession({
+  // //this is the name of the cookie in the browser
+//   name:,
+//   keys: ['secretky1', 'secrtkey2']
+// }))
 
 const app = express();
 app.use(cookieParser());
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
 
+
+
+
+
+
+//use async version of bcrypt
 
 //HELPER FUNCTIONS
 
@@ -99,21 +113,30 @@ app.post("/register", (req, res) => {
 
   const id = generateRandomString();
   const email = req.body.userEmail;
-  const password = req.body.userPassword;
+  password = req.body.userPassword;
+  //TODO referactor with If() { return}
   if (!email || !password) {
     //sending status code assistance from https://stackoverflow.com/questions/14154337/how-to-send-a-custom-http-status-message-in-node-express
     res.status(400).send("Please enter a valid email and password");
   } else if (checkId(email)) {
     res.status(400).send("This email is already in use")
   } else {
-    users[id] = {
-      "id": id,
-      "email": email,
-      "password": password
-    };
-    res.cookie('user_id', users[id]);
-    console.log(users);
-    res.redirect("/urls");
+    //asychronous hashing logic learned during W3D4 lecture from Andy Lindsay
+    //https://github.com/andydlindsay/mar01-2021/blob/master/w03d04/server.js
+    bcrypt.genSalt(10)
+      .then((salt) => {
+        return bcrypt.hash(password, salt)
+      })
+      .then((hash) => {
+        users[id] = {
+          "id": id,
+          "email": email,
+          "password": hash
+      };
+      res.cookie('user_id', users[id]);
+      console.log(users);
+      res.redirect("/urls");
+    });
   }
 });
 
@@ -134,16 +157,22 @@ app.post("/login", (req, res) => {
   //DONE TO DO: add an "if else " email matches && password match statement to reach the user home page route
   const email = req.body.userEmail;
   const password = req.body.userPassword;
-  let id = undefined;
+  //console.log(hashedPassword);
+  //let id = undefined;
   if (checkId(email)) {
-    if (checkId(email) === checkId(password)) {
-      let userMatch = checkId(email);
-      id = users[userMatch].id;
-      res.cookie('user_id', users[id]);
-      res.redirect("/urls");
-    } else {
-      res.status(403).send("Password not correct")
-    }
+    //assistance with this part from the W3D4 lecture from Andy Lindsay
+    //(altered to match my existing logic)
+    //https://github.com/andydlindsay/mar01-2021/blob/master/w03d04/server.js
+    userMatch = checkId(email)
+    bcrypt.compare(password, users[userMatch].password)
+    .then((result) => {
+      if (result) {
+        res.cookie('user_id', users[userMatch]);
+        res.redirect("/urls");
+      } else {
+        res.status(403).send("Password not correct")
+      }
+    })
   } else {
   res.status(403).send("Email not found. Please register a new account");
   }
