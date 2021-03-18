@@ -37,15 +37,13 @@ const generateRandomString = () => {
 };
 
 //for checking for duplicates in the users database
-const checkId = compareItem => {
+const checkId = (compareItem, database) => {
   let duplicate = false;
-  for (const user in users) {
-    if (users[user].id === compareItem) {
-      duplicate = users[user].id;
-    } else if (users[user].email === compareItem) {
-      duplicate = users[user].id;
-    } else if (users[user].password === compareItem) {
-      duplicate = users[user].id;
+  for (const user in database) {
+    if (database[user].id === compareItem) {
+      duplicate = database[user].id;
+    } else if (database[user].email === compareItem) {
+      duplicate = database[user].id;
     }
   }
   return duplicate;
@@ -121,7 +119,7 @@ app.post("/register", (req, res) => {
     return res.status(400).send("Please enter a valid email and password");
   }
   
-  if (checkId(email)) {
+  if (checkId(email, users)) {
     return res.status(400).send("This email is already in use");
   } else {
     //asychronous hashing logic learned during W3D4 lecture from Andy Lindsay
@@ -165,11 +163,11 @@ app.post("/login", (req, res) => {
   //console.log(hashedPassword);
   //let id = undefined;
 
-  if (checkId(email)) {
+  if (checkId(email, users)) {
     //assistance with this part from the W3D4 lecture from Andy Lindsay
     //(altered to match my existing logic)
     //https://github.com/andydlindsay/mar01-2021/blob/master/w03d04/server.js
-    let userMatch = checkId(email);
+    let userMatch = checkId(email, users);
     bcrypt.compare(password, users[userMatch].password)
       .then((result) => {
         if (result) {
