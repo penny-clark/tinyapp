@@ -8,8 +8,8 @@ Users' passwords are stored with bcrypt and their cookies are encrypted with coo
 
 ## Final Product
 
-!["screenshot description"](#)
-!["screenshot description"](#)
+!["Screenshot of make a new ShortURL page"](https://github.com/penny-clark/tinyapp/blob/master/docs/create-ShortURL.png)
+!["Screenshot of user's URLs homepage"](https://github.com/penny-clark/tinyapp/blob/master/docs/user-homepage.png)
 
 ## Dependencies
 
