@@ -12,6 +12,7 @@ app.use(cookieSession({
 }));
 
 //HELPER FUNCTIONS
+
 const { generateRandomString, checkId, filterUserURLS } = require('./helpers');
 
 //DATABASES
@@ -181,7 +182,6 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 });
 
 //EDIT A SHORT URL
-
 // Edit shortURL page
 app.get("/urls/:shortURL", (req, res) => {
   const userId = req.session.user_id;
