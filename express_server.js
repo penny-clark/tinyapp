@@ -29,7 +29,7 @@ const urlDatabase = {
 
 //ROUTES
 
-//REGISTER 
+//REGISTER
 
 //Register page
 app.get("/register", (req, res) => {
@@ -38,9 +38,9 @@ app.get("/register", (req, res) => {
   };
   //Added feature - if logged in user tries to access register page, they are redirected to their home page
   const userId = req.session.user_id;
-   if (userId) {
-     return res.redirect("/urls")
-   };
+  if (userId) {
+    return res.redirect("/urls");
+  }
   res.render("register", templateVars);
 });
 
@@ -87,8 +87,8 @@ app.get("/login", (req, res) => {
   //Added feature - if logged in user tried to access the login page, they are redirected to their home page
   const userId = req.session.user_id;
   if (userId) {
-    return res.redirect("/urls")
-  };
+    return res.redirect("/urls");
+  }
   res.render("login", templateVars);
 });
 
@@ -109,10 +109,9 @@ app.post("/login", (req, res) => {
         req.session.user_id = users[userMatch];
         res.redirect("/urls");
       } else {
-      res.status(403).send("Password not correct")
+        res.status(403).send("Password not correct");
       }
-    })
-   
+    });
 });
 
 //LOGOUT
@@ -125,7 +124,7 @@ app.get("/logout", (req, res) => {
 //Logout request handler
 app.post("/logout", (req, res) => {
   req.session = null;
-  res.redirect("/urls");
+  res.redirect("/login");
 });
 
 
@@ -135,14 +134,14 @@ app.post("/logout", (req, res) => {
 app.get("/urls", (req, res) => {
   const templateVars = {
     userId: req.session.user_id,
-    urls: urlDatabase, 
+    urls: urlDatabase,
   };
 
   const userId = req.session.user_id;
   //if user isn not logged in, redirects to login page
   if (userId === undefined) {
-    return res.redirect("/login");
-  } 
+    return res.status(403).send("Please log in");
+  }
   //if user is logged in, shows the urls index page with only the user's urls
   const userUrls = filterUserURLS(userId.id, urlDatabase);
   templateVars.userUrls = userUrls;
@@ -152,10 +151,6 @@ app.get("/urls", (req, res) => {
 
 //NEW SHORT URL
 
-//edge cases to consider
-// What would happen if a client requests a non-existent shortURL?
-// What happens to the urlDatabase when the server is restarted?
-// What type of status code do our redirects have? What does this status code mean?
 //New ShortURL page
 app.get("/urls/new", (req, res) => {
   const templateVars = {
@@ -163,7 +158,7 @@ app.get("/urls/new", (req, res) => {
   };
   const userId = req.session.user_id;
   if (userId === undefined) {
-    return res.status(403).send("Please log in")
+    return res.redirect("/login");
   } else {
     res.render("urls_new", templateVars);
   }
@@ -178,6 +173,8 @@ app.post("/urls", (req, res) => {
     "longURL": url.longURL,
     "userID": userId.id
   };
+  console.log(urlDatabase, "url database, new")
+  console.log(req.session.user_id.id, "session id")
   res.redirect(`/urls/${newUrlKey}`);
 });
 
@@ -189,11 +186,11 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   const shortUrl = req.params.shortURL;
 
   if (userId === undefined) {
-    return res.redirect("/login");
-  };
+    return res.status(403).send("Not allowed");
+  }
   if (urlDatabase[shortUrl].userID !== userId.id) {
-    return res.status(400).send("Not allowed");
-  };
+    return res.status(403).send("Not allowed");
+  }
   delete urlDatabase[shortUrl];
   res.redirect("/urls");
 });
@@ -203,41 +200,49 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 //Edit ShortURL request handler
 app.post("/urls/edit", (req, res) => {
   const userId = req.session.user_id;
-  if (userId === undefined) {
-    return res.redirect("/login");
-  }
+  // if (userId === undefined) {
+  //   return res.redirect("/login");
+  // }
   
-  if (urlDatabase[req.params.shortURL].userID !== userId.id) {
-    return res.status(400).send("Not allowed");
-  } 
+  // if (urlDatabase[req.params.shortURL].id !== userId.id) {
+  //   return res.status(403).send("Not allowed");
+  // }
 
   const url = req.body;
-    //getting rid of the old Short URL
+  //getting rid of the old Short URL
   for (const key in urlDatabase) {
-    if (urlDatabase[key].longURL === url.longURL)
-    delete urlDatabase[key];
+    if (urlDatabase[key].longURL === url.longURL) {
+      delete urlDatabase[key];
+    }
   }
   //making the new ShortURL
-  const newUrlKey = generateRandomString()
+  const newUrlKey = generateRandomString();
   urlDatabase[newUrlKey] = {
     "longURL": url.longURL,
     "userID": userId.id
-  }
-  res.redirect(`/urls/${newUrlKey}`);
+  };
+  console.log(urlDatabase, "url database edit")
+  res.redirect("/urls");
 });
 
 // Edit shortURL display page
 app.get("/urls/:shortURL", (req, res) => {
+  const userId = req.session.user_id;
+
   if (urlDatabase[req.params.shortURL] === undefined) {
     return res.status(404).send("Page does not exist");
+  } else if (userId === undefined) {
+    return res.status(400).send("Please log in");
+  } else if (urlDatabase[req.params.shortURL].userID !== userId.id) {
+    return res.status(403).send("Not allowed");
   } else {
-  const templateVars = { 
-    userId: req.session.user_id,
-    shortURL: req.params.shortURL, 
-    longURL: urlDatabase[req.params.shortURL].longURL
-  };
-  res.render("urls_show", templateVars);
-}
+    const templateVars = {
+      userId: req.session.user_id,
+      shortURL: req.params.shortURL,
+      longURL: urlDatabase[req.params.shortURL].longURL
+    };
+    res.render("urls_show", templateVars);
+  }
 });
 
 // ShortURL Magic Redirection link
@@ -246,16 +251,16 @@ app.get("/u/:shortURL", (req, res) => {
   if (urlDatabase[req.params.shortURL] === undefined) {
     return res.status(404).send("Page does not exist");
   } else {
-  const longUrl = urlDatabase[req.params.shortURL].longURL;
-  res.redirect(longUrl);
+    const longUrl = urlDatabase[req.params.shortURL].longURL;
+    res.redirect(longUrl);
   }
 });
 
-// Home page 
+// Home page
 app.get("/", (req, res) => {
   const templateVars = {
     userId: req.session.user_id,
-    urls: urlDatabase, 
+    urls: urlDatabase,
   };
   const userId = req.session.user_id;
 
@@ -264,7 +269,7 @@ app.get("/", (req, res) => {
     return res.redirect("/login");
   }
 
-  // If user is logged in, redirects to custom index page with user's urls 
+  // If user is logged in, redirects to custom index page with user's urls
   const userUrls = filterUserURLS(userId.id, urlDatabase);
   templateVars.userUrls = userUrls;
   res.render("urls_index", templateVars);
@@ -275,7 +280,7 @@ app.get("/", (req, res) => {
 // Default page path
 app.get("*", (req, res)=> {
   return res.status(404).send("Page does not exist");
-})
+});
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
