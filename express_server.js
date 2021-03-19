@@ -1,22 +1,17 @@
 const express = require("express");
-//looks like we might change this to - process.env.PORT || 8080
 const PORT = 8080;
 const bodyParser = require("body-parser");
-//const cookieParser = require("cookie-parser");
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcrypt');
-
 const app = express();
-//app.use(cookieParser());
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieSession({
-  //this is the name of the cookie in the browser
   name: 'tinyAppSession',
   keys: ['secretkey1', 'secretkey2']
 }));
 
-//Helper functions
+//HELPER FUNCTIONS
 const { generateRandomString, checkId, filterUserURLS } = require('./helpers');
 
 //DATABASES
@@ -30,13 +25,12 @@ const urlDatabase = {
 //ROUTES
 
 //REGISTER
-
 //Register page
 app.get("/register", (req, res) => {
   const templateVars = {
     userId: req.session.user_id
   };
-  //Added feature - if logged in user tries to access register page, they are redirected to their home page
+
   const userId = req.session.user_id;
   if (userId) {
     return res.redirect("/urls");
@@ -71,20 +65,17 @@ app.post("/register", (req, res) => {
         "password": hash
       };
       req.session.user_id = users[id];
-      console.log(users); //debugging
       return res.redirect("/urls");
     });
-
 });
 
 //LOGIN
-
 //Login page
 app.get("/login", (req, res) => {
   const templateVars = {
     userId: req.session.user_id
   };
-  //Added feature - if logged in user tried to access the login page, they are redirected to their home page
+  
   const userId = req.session.user_id;
   if (userId) {
     return res.redirect("/urls");
@@ -115,7 +106,6 @@ app.post("/login", (req, res) => {
 });
 
 //LOGOUT
-
 //Logout page
 app.get("/logout", (req, res) => {
   res.render("/login");
@@ -128,8 +118,7 @@ app.post("/logout", (req, res) => {
 });
 
 
-//URLS (User homepage)
-
+//USER HOMEPAGE
 //Urls page
 app.get("/urls", (req, res) => {
   const templateVars = {
@@ -149,8 +138,7 @@ app.get("/urls", (req, res) => {
   
 });
 
-//NEW SHORT URL
-
+//MAKE A NEW SHORT URL
 //New ShortURL page
 app.get("/urls/new", (req, res) => {
   const templateVars = {
@@ -173,13 +161,10 @@ app.post("/urls", (req, res) => {
     "longURL": url.longURL,
     "userID": userId.id
   };
-  console.log(urlDatabase, "url database, new")
-  console.log(req.session.user_id.id, "session id")
   res.redirect(`/urls/${newUrlKey}`);
 });
 
-//DELETE SHORT URL
-
+//DELETE A SHORT URL
 //Delete ShortURL request handler
 app.post("/urls/:shortURL/delete", (req, res) => {
   const userId = req.session.user_id;
@@ -195,37 +180,9 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   res.redirect("/urls");
 });
 
-//EDIT SHORT URL
+//EDIT A SHORT URL
 
-//Edit ShortURL request handler
-app.post("/urls/edit", (req, res) => {
-  const userId = req.session.user_id;
-  // if (userId === undefined) {
-  //   return res.redirect("/login");
-  // }
-  
-  // if (urlDatabase[req.params.shortURL].id !== userId.id) {
-  //   return res.status(403).send("Not allowed");
-  // }
-
-  const url = req.body;
-  //getting rid of the old Short URL
-  for (const key in urlDatabase) {
-    if (urlDatabase[key].longURL === url.longURL) {
-      delete urlDatabase[key];
-    }
-  }
-  //making the new ShortURL
-  const newUrlKey = generateRandomString();
-  urlDatabase[newUrlKey] = {
-    "longURL": url.longURL,
-    "userID": userId.id
-  };
-  console.log(urlDatabase, "url database edit")
-  res.redirect("/urls");
-});
-
-// Edit shortURL display page
+// Edit shortURL page
 app.get("/urls/:shortURL", (req, res) => {
   const userId = req.session.user_id;
 
@@ -245,8 +202,28 @@ app.get("/urls/:shortURL", (req, res) => {
   }
 });
 
-// ShortURL Magic Redirection link
+//Edit ShortURL request handler
+app.post("/urls/edit", (req, res) => {
+  const userId = req.session.user_id;
+  const url = req.body;
 
+  //getting rid of the old Short URL
+  for (const key in urlDatabase) {
+    if (urlDatabase[key].longURL === url.longURL) {
+      delete urlDatabase[key];
+    }
+  }
+  //making the new ShortURL
+  const newUrlKey = generateRandomString();
+  urlDatabase[newUrlKey] = {
+    "longURL": url.longURL,
+    "userID": userId.id
+  };
+  res.redirect("/urls");
+});
+
+// ShortURL Redirection link
+// This is where the ShortURL magic happens
 app.get("/u/:shortURL", (req, res) => {
   if (urlDatabase[req.params.shortURL] === undefined) {
     return res.status(404).send("Page does not exist");
@@ -256,7 +233,7 @@ app.get("/u/:shortURL", (req, res) => {
   }
 });
 
-// Home page
+// Default home page
 app.get("/", (req, res) => {
   const templateVars = {
     userId: req.session.user_id,
@@ -273,9 +250,7 @@ app.get("/", (req, res) => {
   const userUrls = filterUserURLS(userId.id, urlDatabase);
   templateVars.userUrls = userUrls;
   res.render("urls_index", templateVars);
-
 });
-
 
 // Default page path
 app.get("*", (req, res)=> {
@@ -285,10 +260,4 @@ app.get("*", (req, res)=> {
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
-
-
-//Do I need this?
-// app.get("/urls.json", (req, res) => {
-//   res.json(urlDatabase);
-// });
 
