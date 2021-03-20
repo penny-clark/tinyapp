@@ -203,22 +203,13 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 //Edit ShortURL request handler
-app.post("/urls/edit", (req, res) => {
-  const userId = req.session.user_id;
-  const url = req.body;
-
-  //getting rid of the old Short URL
-  for (const key in urlDatabase) {
-    if (urlDatabase[key].longURL === url.longURL) {
-      delete urlDatabase[key];
-    }
-  }
-  //making the new ShortURL
-  const newUrlKey = generateRandomString();
-  urlDatabase[newUrlKey] = {
-    "longURL": url.longURL,
-    "userID": userId.id
-  };
+app.post("/urls/:shortURL", (req, res) => {
+  //const userId = req.session.user_id;
+  const url = req.body.longURL;
+  const shortURL = req.params.shortURL
+  
+//Setting the new ShortURL destination
+  urlDatabase[shortURL].longURL = url
   res.redirect("/urls");
 });
 

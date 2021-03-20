@@ -16,8 +16,8 @@
         <h5 class="card-title">TinyURL for: <a href="/u/<%= longURL %>"></a> <%=  longURL %></h5>
         <p class="card-text">Short URL: <a href="/u/<%= shortURL %>"><%= shortURL %></a></p>
         <h2> Edit </h2>
-          <form class="form-inline" method="POST" action="/urls/edit">
-          <p class="card-text">New URL for: <input class="form-control" type="text" name="longURL" placeholder="<%= longURL %>" style="width: 300px; margin: 1em"> </p>
+          <form class="form-inline" method="POST" action="/urls/<%= shortURL %>">
+          <p class="card-text">Set a new destination for this ShortURL: <input class="form-control" type="text" name="longURL" placeholder="new URL" style="width: 300px; margin: 1em"> </p>
           <button type="submit" class="btn btn-primary">Update</button>
         </form>
         <p class="card-text"> <a href='#'>Make a new Short URL</a></p>
