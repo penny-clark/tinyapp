@@ -204,7 +204,6 @@ app.get("/urls/:shortURL", (req, res) => {
 
 //Edit ShortURL request handler
 app.post("/urls/:shortURL", (req, res) => {
-  //const userId = req.session.user_id;
   const url = req.body.longURL;
   const shortURL = req.params.shortURL
   
